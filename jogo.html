@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo</title>
+</head>
+<style>
+  canvas{
+    position:absolute;
+    left: 0px;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.528);
+
+  }
+</style>
+<body>
+   <script>
+     //variaveis globais
+       var canvas, ctx ,largura , altura, frames,velocidade,inimiV,statusAtual,score;
+
+       var teclas = {}
+    //Objeto que é o personagem e suas caracteristicas
+       personagem = {
+           x: 10,
+           y: 175,
+           h: 30,
+           w: 30,
+           cor: "#3768ff",
+
+           desenha: function(){
+             ctx.fillStyle = this.cor;
+             ctx.fillRect(this.x,this.y,this.h,this.w)
+
+           }
+       }
+      //Objeto que gera os inimigos
+       inimigos ={
+        _obs: [],
+        tempo: 0,
+
+        insere: function(){
+          this._obs.push({
+            posx: largura,
+            largura: 40,
+            altura: 40,
+            posy: 10 + Math.floor(351 * Math.random()),
+            cor: "#ff0000"
+          });
+        
+          this.tempo = 15;
+         if(score >= 100)
+            inimiV = 10;
+
+         if(score >= 200)
+            this.tempo = 10;
+        
+         if(score >= 300)
+            this.tempo = 5;
+        
+
+        },
+        atualiza: function(){
+
+          if(this.tempo == 0 )
+             this.insere();
+          else
+             this.tempo --;
+
+          for(var i = 0, tam = this._obs.length; i < tam; i ++){
+             var obs = this._obs[i];
+
+             obs.posx -= inimiV;
+       //teste de colisão 
+           if(obs.posx < personagem.x + personagem.w && obs.posy > personagem.y 
+           && obs.posy < personagem.y + personagem.h){
+               score = score - 1;
+           }
+           else if (obs.posy + obs.altura > personagem.y 
+           && personagem.x + personagem.w > obs.posx && obs.posy + obs.altura < personagem.y 
+           + personagem.h){
+               score = score - 1;
+           }
+            else score = score;
+       //atibuição de score quando os obstaculos passam a tela
+           if (obs.posx == 0)
+               score ++;
+
+           else if(obs.posx <= - obs.largura){
+               this._obs.splice(i,1);
+               i--;
+               tam--;
+          }
+
+       }
+
+
+    }, 
+        desenha: function(){
+          for(var i = 0, tam = this._obs.length; i < tam; i ++){
+            var obs = this._obs[i];
+            ctx.fillStyle = obs.cor;
+            ctx.fillRect(obs.posx,obs.posy,obs.altura,obs.largura);
+          }
+        }
+
+       };
+       document.addEventListener("keydown",  function(e){
+       teclas[e.keyCode] =  true;
+      
+
+       });
+       document.addEventListener("keyup", function(e){
+         delete teclas[e.keyCode];
+       });
+  //função que faz o personagem se mover
+       function mover(){
+        if (83 in teclas && personagem.y < 360)
+            personagem.y += velocidade
+
+        if (87 in teclas && personagem.y > 10)
+            personagem.y -= velocidade
+
+        if (68 in teclas && personagem.x < 360)
+            personagem.x += velocidade
+            
+        if (65 in teclas && personagem.x > 10)
+            personagem.x -= velocidade
+       }
+
+       function mouse(event){
+       statusAtual = 1;
+      }
+
+    //função principal
+       function main(){
+        score = 1;
+        inimiV = 5;
+        velocidade = 6;
+        frame = 0;
+        largura = 400;
+        altura = 400;
+
+        canvas = document.createElement("canvas");
+        canvas.width = largura;
+        canvas.height = altura;
+        canvas.style.border = "1px solid #000";
+        
+        ctx = canvas.getContext("2d");
+        document.body.appendChild(canvas);
+
+        document.addEventListener("mousedown", mouse);
+        
+        statusAtual = 0;
+        loop();
+       }
+      /*função que mantem a "animação" funcionando, ou seja, redesenha a tela com as
+    altrações feitas*/
+       function loop(){
+         ctx.clearRect(0,0,largura,altura);
+         mover();
+         atualiza();
+         desenha();
+        
+
+         window.requestAnimationFrame(loop);
+
+       }  
+     //função que atualiza os inimigos e sinaliza um novo nivel 
+       function atualiza(){
+         frame++;
+
+        if(frame == 500)
+           frame = 0;
+
+        if (score == 100)
+           statusAtual = 2;
+
+        if (score == 200)
+           statusAtual = 2;
+
+        if (score == 300)
+           statusAtual = 2;
+
+        if(frame == 0){
+           statusAtual =1 ;
+           score = score + 1;
+          };
+
+        if(statusAtual==1 && score > 0)
+           inimigos.atualiza();
+
+       }
+     //função que desenha na tela
+       function desenha(){
+         if (statusAtual == 0){
+          ctx.fillStyle = "#afeeee";
+          ctx.fillRect(0,0,largura,altura);
+          ctx.fillStyle = "#000";
+          ctx.font = "15px roboto mono";
+          ctx.fillText("Tutorial",165,20);
+          ctx.fillText("1.Mova o personagem para cima pressionando a tecla W",20,60);
+          ctx.fillText("2.Mova o personagem para baixo pressionando a tecla S",20,90);
+          ctx.fillText("3.Mova o personagem para a direita pressionando a tecla D",20,110);
+          ctx.fillText("4.Mova o personagem para a esquerda pressionando a tecla A",20,140);
+          ctx.fillText("5.Desvie dos obstáculos para continuar",20,170);
+          ctx.fillText("Pressione o mouse para começar",95,290);
+         }
+
+         else if (statusAtual == 1 && score > 0){
+          ctx.fillStyle = "#000";
+          ctx.font = "50px anton";
+          ctx.fillText("score:" + score,30,60);
+          personagem.desenha();
+          inimigos.desenha();
+         }
+         else if ( statusAtual == 2 ){
+          ctx.fillStyle = "rgb(212, 75, 154, 0.2)";
+          ctx.fillRect(0,0,largura,altura);
+          ctx.fillStyle = "#000";
+          ctx.font = "50px roboto";
+          ctx.fillText("Proximo Nivel",45,200)
+         }
+         else if ( score <= 0){
+          ctx.fillStyle = "rgb(0, 0, 0, 0.2)";
+          ctx.fillRect(0,0,largura,altura);
+          ctx.fillStyle = "#000";
+          ctx.font = "50px roboto";
+          ctx.fillText("Game Over",65,200)
+         }
+         
+       }
+       main();
+
+   </script>
+
+</body>
+</html>
